@@ -1,10 +1,10 @@
 #
-# Cookbook Name:: chef-client
+# Cookbook::  chef-client
 # Recipe:: src_service
 #
 # Author:: Julian C. Dunn (<jdunn@chef.io>)
 #
-# Copyright 2014, Chef Software, Inc.
+# Copyright:: 2014-2017, Chef Software, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -26,18 +26,22 @@ end
 
 # libraries/helpers.rb method to DRY directory creation resources
 client_bin = find_chef_client
-Chef::Log.debug("Found chef-client in #{client_bin}")
+Chef::Log.debug("Using chef-client binary at #{client_bin}")
 node.default['chef_client']['bin'] = client_bin
-create_directories
+create_chef_directories
 
 execute "install #{node['chef_client']['svc_name']} in SRC" do
-  command "mkssys -s #{node['chef_client']['svc_name']} -p #{node['chef_client']['bin']} -u root -S -n 15 -f 9 -o #{node['chef_client']['log_dir']}/client.log -e #{node['chef_client']['log_dir']}/client.log -a '-i #{node['chef_client']['interval']} -s #{node['chef_client']['splay']}'"
+  command "mkssys -s #{node['chef_client']['svc_name']} -p #{node['chef_client']['bin']} -u root -S -n 15 -f 9 -o #{node['chef_client']['log_dir']}/#{node['chef_client']['log_file']} -e #{node['chef_client']['log_dir']}/#{node['chef_client']['log_file']} -a '-i #{node['chef_client']['interval']} -s #{node['chef_client']['splay']}'"
   not_if "lssrc -s #{node['chef_client']['svc_name']}"
   action :run
 end
 
 execute "enable #{node['chef_client']['svc_name']}" do
-  command "mkitab '#{node['chef_client']['svc_name']}:2:once:/usr/bin/startsrc -s #{node['chef_client']['svc_name']} > /dev/console 2>&1'"
+  if node['chef_client']['ca_cert_path']
+    command "mkitab '#{node['chef_client']['svc_name']}:2:once:/usr/bin/startsrc -e \"SSL_CERT_FILE=#{node['chef_client']['ca_cert_path']}\" -s #{node['chef_client']['svc_name']} > /dev/console 2>&1'"
+  else
+    command "mkitab '#{node['chef_client']['svc_name']}:2:once:/usr/bin/startsrc -s #{node['chef_client']['svc_name']} > /dev/console 2>&1'"
+  end
   not_if "lsitab #{node['chef_client']['svc_name']}"
 end
 
