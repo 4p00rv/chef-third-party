@@ -28,7 +28,15 @@ default['datadog']['api_key'] = nil
 # Set it as an attribute, or on your node `run_state` under the key `['datadog']['application_key']`
 default['datadog']['application_key'] = nil
 
-# Set node['datadog']['agent6'] to false to install an agent5 instead of agent6.
+########################################################################
+###                  Agent6-only attributes                          ###
+
+# If you're installing a pre-release version of Agent 6 (beta or RC), you need to:
+# * on debian: set node['datadog']['agent6_aptrepo_dist'] to 'beta' instead of 'stable'
+# * on RHEL: set node['datadog']['agent6_yumrepo'] to 'https://yum.datadoghq.com/beta/x86_64/'
+# In all cases, follow the instructions below:
+
+# Set node['datadog']['agent6'] to true to install an agent6 instead of agent5.
 # To upgrade from agent5 to agent6, you need to:
 # * set node['datadog']['agent6'] to true, and
 # * either set node['datadog']['agent6_version'] to an existing agent6 version (recommended), or
@@ -37,14 +45,7 @@ default['datadog']['application_key'] = nil
 # * set node['datadog']['agent6'] to false, and
 # * pin node['datadog']['agent_version'] to an existing agent5 version, and
 # * set node['datadog']['agent_allow_downgrade'] to true
-# If you're installing a pre-release version of Agent 6 (beta or RC), you need to:
-# * on debian: set node['datadog']['agent6_aptrepo_dist'] to 'beta' instead of 'stable'
-# * on RHEL: set node['datadog']['agent6_yumrepo'] to 'https://yum.datadoghq.com/beta/x86_64/'
-default['datadog']['agent6'] = true
-
-########################################################################
-###                  Agent6-only attributes                          ###
-
+default['datadog']['agent6'] = false
 # Default of `nil` will install latest version, applies to agent6 only.
 # See documentation of `agent_version` attribute for allowed configuration format.
 default['datadog']['agent6_version'] = nil
@@ -194,6 +195,14 @@ else
   default['datadog']['config_dir'] = '/etc/dd-agent'
   default['datadog']['agent_name'] = 'datadog-agent'
 end
+
+# Since 6.11.0, the Datadog Agent creates/uses a custom user to run on Windows.
+# Set `windows_ddagentuser_name` using the format `<domain>\<user>` to provide a
+# specific username and `windows_ddagentuser_password` to provide a specific password.
+# You can set these 2 values as node attributes or on `node.run_state` under
+# the keys `['datadog']['windows_ddagentuser_name']` and `['datadog']['windows_ddagentuser_password']`
+default['datadog']['windows_ddagentuser_name'] = nil
+default['datadog']['windows_ddagentuser_password'] = nil
 
 # DEPRECATED, will be removed after the release of datadog-agent 6.0
 # Set to true to always install datadog-agent-base (usually only installed on

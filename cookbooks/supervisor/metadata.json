@@ -1,6 +1,6 @@
 {
   "name": "supervisor",
-  "version": "0.4.17",
+  "version": "0.4.12",
   "description": "Installs supervisor and provides resources to configure services",
   "long_description": "",
   "maintainer": "Noah Kantrowitz",
@@ -16,6 +16,7 @@
     "smartos": ">= 0.0.0"
   },
   "dependencies": {
+    "python": ">= 0.0.0"
   },
   "recommendations": {
   },

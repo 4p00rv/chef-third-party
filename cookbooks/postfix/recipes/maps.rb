@@ -38,7 +38,9 @@ node['postfix']['maps'].each do |type, maps|
         map: content,
         separator: separator
       )
-      notifies :run, "execute[update-postmap-#{file}]" if %w(btree cdb dbm hash sdbm).include?(type)
+      if %w(btree cdb dbm hash sdbm).include?(type)
+        notifies :run, "execute[update-postmap-#{file}]"
+      end
       notifies :restart, 'service[postfix]'
     end
   end
