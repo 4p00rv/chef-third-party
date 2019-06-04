@@ -17,102 +17,93 @@
 # limitations under the License.
 #
 
-include_recipe "python"
 
 # foodcritic FC023: we prefer not having the resource on non-smartos
-if platform_family?("smartos")
-  package "py27-expat" do
+if platform_family?('smartos')
+  package 'py27-expat' do
     action :install
   end
 end
 
-python_pip "supervisor" do
-  action :upgrade
-  version node['supervisor']['version'] if node['supervisor']['version']
+execute 'pip install supervisor' do
+   command 'pip install supervisor --index=https://pypi.python.org/simple/'
 end
 
 directory node['supervisor']['dir'] do
-  owner "root"
-  group "root"
-  mode "755"
+  owner 'root'
+  group 'root'
+  mode '755'
   recursive true
 end
 
 template node['supervisor']['conffile'] do
-  source "supervisord.conf.erb"
-  owner "root"
-  group "root"
-  mode "644"
-  variables({
-    :inet_port => node['supervisor']['inet_port'],
-    :inet_username => node['supervisor']['inet_username'],
-    :inet_password => node['supervisor']['inet_password'],
-    :supervisord_minfds => node['supervisor']['minfds'],
-    :supervisord_minprocs => node['supervisor']['minprocs'],
-    :supervisor_version => node['supervisor']['version'],
-    :socket_file => node['supervisor']['socket_file'],
-  })
+  source 'supervisord.conf.erb'
+  owner 'root'
+  group 'root'
+  mode '644'
+  variables(inet_port: node['supervisor']['inet_port'],
+            inet_username: node['supervisor']['inet_username'],
+            inet_password: node['supervisor']['inet_password'],
+            supervisord_minfds: node['supervisor']['minfds'],
+            supervisord_minprocs: node['supervisor']['minprocs'],
+            supervisor_version: node['supervisor']['version'],
+            socket_file: node['supervisor']['socket_file'])
 end
 
 directory node['supervisor']['log_dir'] do
-  owner "root"
-  group "root"
-  mode "755"
+  owner 'root'
+  group 'root'
+  mode '755'
   recursive true
 end
 
-template "/etc/default/supervisor" do
-  source "debian/supervisor.default.erb"
-  owner "root"
-  group "root"
-  mode "644"
-  only_if { platform_family?("debian") }
+template '/etc/default/supervisor' do
+  source 'debian/supervisor.default.erb'
+  owner 'root'
+  group 'root'
+  mode '644'
+  only_if { platform_family?('debian') }
 end
 
 init_template_dir = value_for_platform_family(
-  ["rhel", "fedora"] => "rhel",
-  "debian" => "debian"
+  %w(rhel fedora) => 'rhel',
+  'debian' => 'debian'
 )
 
 case node['platform']
-when "amazon", "centos", "debian", "fedora", "redhat", "ubuntu"
-  template "/etc/init.d/supervisor" do
+when 'amazon', 'centos', 'debian', 'fedora', 'redhat', 'ubuntu'
+  template '/etc/init.d/supervisor' do
     source "#{init_template_dir}/supervisor.init.erb"
-    owner "root"
-    group "root"
-    mode "755"
-    variables({
-      # TODO: use this variable in the debian platform-family template
-      # instead of altering the PATH and calling "which supervisord".
-      :supervisord => "#{node['python']['prefix_dir']}/bin/supervisord"
-    })
+    owner 'root'
+    group 'root'
+    mode '755'
   end
 
-  service "supervisor" do
-    supports :status => true, :restart => true
+  service 'supervisor' do
+    supports status: true, restart: true, start: true, enable: true
     action [:enable, :start]
   end
-when "smartos"
-  directory "/opt/local/share/smf/supervisord" do
-    owner "root"
-    group "root"
-    mode "755"
+when 'smartos'
+  directory '/opt/local/share/smf/supervisord' do
+    owner 'root'
+    group 'root'
+    mode '755'
   end
 
-  template "/opt/local/share/smf/supervisord/manifest.xml" do
-    source "manifest.xml.erb"
-    owner "root"
-    group "root"
-    mode "644"
-    notifies :run, "execute[svccfg-import-supervisord]", :immediately
+  template '/opt/local/share/smf/supervisord/manifest.xml' do
+    source 'manifest.xml.erb'
+    owner 'root'
+    group 'root'
+    mode '644'
+    notifies :run, 'execute[svccfg-import-supervisord]', :immediately
   end
 
-  execute "svccfg-import-supervisord" do
-    command "svccfg import /opt/local/share/smf/supervisord/manifest.xml"
+  execute 'svccfg-import-supervisord' do
+    command 'svccfg import /opt/local/share/smf/supervisord/manifest.xml'
     action :nothing
   end
 
-  service "supervisord" do
+  service 'supervisord' do
     action [:enable]
   end
 end
